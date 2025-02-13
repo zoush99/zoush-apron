@@ -144,19 +144,25 @@ size_t t1p_size(ap_manager_t* man, t1p_t* a)
 /* ********************************************************************** */
 /* 2. Control of internal representation */
 /* ********************************************************************** */
+// By zoush99
 void t1p_minimize(ap_manager_t* man, t1p_t* a)
 {
     CALL();
 	t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_MINIMIZE);
-	not_implemented();
+    man->result.flag_best = true;
+    man->result.flag_exact = true;
+    return;
 }
 
 /* Put the abstract value in canonical form. (supress zero coeff from the affine form) */
+// By zoush99 \todo may be can be optimized
 void t1p_canonicalize(ap_manager_t* man, t1p_t* a)
 {
     CALL();
 	t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_CANONICALIZE);
-	not_implemented();
+    man->result.flag_best = true;
+    man->result.flag_exact = true;
+    return;
 }
 
 /* Return an hash code */
@@ -175,22 +181,20 @@ int t1p_hash(ap_manager_t* man, t1p_t* a)
     man->result.flag_exact = true;
     return res;
 }
-//{
-    //CALL();
-//	t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_HASH);
-//	not_implemented();
-//}
 
 /* Perform some transformation on the abstract value, guided by the field algorithm.
  *
  * The transformation may lose information.  The argument "algorithm"
  * overrides the field algorithm of the structure of type ap_funopt_t
  * associated to ap_abstract0_approximate (commodity feature). */
-void t1p_approximate(ap_manager_t* man, t1p_t* a, int algorithm)
+// By zoush99
+ void t1p_approximate(ap_manager_t* man, t1p_t* a, int algorithm)
 {
     CALL();
 	t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_APPROXIMATE);
-	not_implemented();
+    man->result.flag_best = true;
+    man->result.flag_exact = true;
+    return;
 }
 
 
@@ -250,13 +254,16 @@ void t1p_fprint(FILE* stream,
     man->result.flag_exact = tbool_true;
 }
 
+// By zoush99 \todo may be can be optimized
 void t1p_fprintdiff(FILE* stream,
 		ap_manager_t* man,
 		t1p_t* a1, t1p_t* a2,
 		char** name_of_dim)
 {
 	t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_FPRINTDIFF);
-	not_implemented();
+    man->result.flag_best = true;
+    man->result.flag_exact = true;
+    return;
 }
 
 void t1p_fdump(FILE* stream, ap_manager_t* man, t1p_t* a)
