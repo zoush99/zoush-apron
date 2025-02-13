@@ -10,7 +10,7 @@
 /* ********************************************************************** */
 
 #include "t1p_internal.h"
-//#include "t1p_representation.h"
+// #include "t1p_representation.h"
 #include "t1p_constructor.h"
 #include "ap_manager.h"
 #include "ap_lincons0.h"
