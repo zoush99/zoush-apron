@@ -28,7 +28,9 @@ CMXSINC = $(APRON_CMXSINC) -I ../box -I ../newpolka -I .
 CCMODULES = t1p_internal t1p_representation t1p_constructor t1p_meetjoin t1p_assign t1p_resize t1p_otherops t1p_fun t1p_itv_utils
 CCSRC = t1p.h t1p_macro_def.h t1p_test.c t1p_test_eval_texp.c $(CCMODULES:%=%.h) $(CCMODULES:%=%.c)
 
-CCINC_TO_INSTALL = t1p.h
+# By zoush99
+CCINC_TO_INSTALL = t1p.h t1p_representation.h t1p_internal.h t1p_constructor.h t1p_meetjoin.h t1p_assign.h t1p_resize.h t1p_otherops.h t1p_fun.h t1p_itv_utils.h
+
 CCBIN_TO_INSTALL =
 CCLIB_TO_INSTALL = libt1pMPQ.a libt1pD.a libt1pMPFR.a
 CCLIB_TO_INSTALL_DEBUG = libt1pMPQ_debug.a libt1pD_debug.a libt1pMPFR_debug.a
