@@ -1,0 +1,11 @@
+{
+    "C_Cpp.errorSquiggles": "disabled",
+    "files.associations": {
+        "t1p_constructor.h": "c",
+        "t1p_internal.h": "c",
+        "pk.h": "c",
+        "ap_global0.h": "c",
+        "ap_abstract0.h": "c",
+        "t1p_meetjoin.h": "c"
+    }
+}
