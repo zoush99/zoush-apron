@@ -235,14 +235,20 @@ tbool_t t1p_is_leq(ap_manager_t* man, t1p_t* a, t1p_t* b)
     return res;
 }
 
-
+// By zoush99
+// Check if the dimension 'dim' is unconstrained, is value of this dimension top?
 tbool_t t1p_is_dimension_unconstrained(ap_manager_t* man, t1p_t* a, ap_dim_t dim)
 {
     CALL();
 	t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_IS_DIMENSION_UNCONSTRAINED);
-	not_implemented();
+    if (itv_is_top(a->box[dim])) 
+        return tbool_true;
+    else 
+        return tbool_false;
 }
 
+// By zoush99
+// Check if the t1p_t 'a' satisfies the given constraint 'tcons'
 tbool_t t1p_sat_tcons(ap_manager_t* man, t1p_t* a, ap_tcons0_t* tcons)
 {
     CALL();
@@ -250,11 +256,16 @@ tbool_t t1p_sat_tcons(ap_manager_t* man, t1p_t* a, ap_tcons0_t* tcons)
 	not_implemented();
 }
 
-tbool_t t1p_sat_interval(ap_manager_t* man, t1p_t* a, ap_interval_t* interval)
+// By zoush99
+// Check if the dimension 'dim' is constrained by the given interval 'interval'
+tbool_t t1p_sat_interval(ap_manager_t* man, t1p_t* a, ap_dim_t dim, ap_interval_t* interval)
 {
     CALL();
 	t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_SAT_INTERVAL);
-	not_implemented();
+    man->result.flag_best = tbool_true;
+    man->result.flag_exact = tbool_true;
+    ap_interval_set_itv(pr->itv, pr->sat_interval_interval, a->p[dim]);
+    return ap_interval_is_leq(pr->sat_interval_interval,interval);
 }
 
 tbool_t t1p_sat_lincons(ap_manager_t* man, t1p_t* a, ap_lincons0_t* lincons)

@@ -40,7 +40,7 @@ tbool_t t1p_is_leq(ap_manager_t* man, t1p_t* a, t1p_t* b);
 tbool_t t1p_is_eq(ap_manager_t* man, t1p_t* a, t1p_t* b);
 tbool_t t1p_is_dimension_unconstrained(ap_manager_t* man, t1p_t* a, ap_dim_t dim);
 tbool_t t1p_sat_lincons(ap_manager_t* man, t1p_t* a, ap_lincons0_t* lincons);
-tbool_t t1p_sat_interval(ap_manager_t* man, t1p_t* a, ap_interval_t* interval);
+tbool_t t1p_sat_interval(ap_manager_t* man, t1p_t* a, ap_dim_t dim, ap_interval_t* interval);   // By zoush99
 tbool_t t1p_sat_tcons(ap_manager_t* man, t1p_t* a, ap_tcons0_t* tcons);
 
 /* 4.Extraction of properties */

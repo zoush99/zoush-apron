@@ -149,8 +149,8 @@ void t1p_minimize(ap_manager_t* man, t1p_t* a)
 {
     CALL();
 	t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_MINIMIZE);
-    man->result.flag_best = true;
-    man->result.flag_exact = true;
+    man->result.flag_best = tbool_true;
+    man->result.flag_exact = tbool_true;
     return;
 }
 
@@ -160,8 +160,8 @@ void t1p_canonicalize(ap_manager_t* man, t1p_t* a)
 {
     CALL();
 	t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_CANONICALIZE);
-    man->result.flag_best = true;
-    man->result.flag_exact = true;
+    man->result.flag_best = tbool_true;
+    man->result.flag_exact = tbool_true;
     return;
 }
 
@@ -177,8 +177,8 @@ int t1p_hash(ap_manager_t* man, t1p_t* a)
 	    res = 3*res + itv_hash(a->box[i]);
 	}
     }
-    man->result.flag_best = true;
-    man->result.flag_exact = true;
+    man->result.flag_best = tbool_true;
+    man->result.flag_exact = tbool_true;
     return res;
 }
 
@@ -192,8 +192,8 @@ int t1p_hash(ap_manager_t* man, t1p_t* a)
 {
     CALL();
 	t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_APPROXIMATE);
-    man->result.flag_best = true;
-    man->result.flag_exact = true;
+    man->result.flag_best = tbool_true;
+    man->result.flag_exact = tbool_true;
     return;
 }
 
@@ -261,8 +261,8 @@ void t1p_fprintdiff(FILE* stream,
 		char** name_of_dim)
 {
 	t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_FPRINTDIFF);
-    man->result.flag_best = true;
-    man->result.flag_exact = true;
+    man->result.flag_best = tbool_true;
+    man->result.flag_exact = tbool_true;
     return;
 }
 
