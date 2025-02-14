@@ -271,11 +271,14 @@ t1p_t* t1p_widening_old(ap_manager_t* man, t1p_t* a1, t1p_t* a2)
     return res;
 }
 
+// By zoush99
 t1p_t t1p_closure(ap_manager_t* man, bool destructive, t1p_t* a)
 {
     CALL();
     t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_CLOSURE);
-    not_implemented();
+	man->result.flag_best = tbool_true;
+	man->result.flag_exact = tbool_true;
+	return destructive ? a : t1p_copy(man,a);
 }
 
 void ap_abstract1_aff_build(ap_manager_t* man, ap_abstract1_t* abstract1, ap_var_t var, unsigned int index, ap_interval_t *interval, bool isunion)
@@ -288,7 +291,7 @@ void ap_abstract1_aff_build(ap_manager_t* man, ap_abstract1_t* abstract1, ap_var
     ap_dim_t dim = ap_environment_dim_of_var(abstract1->env,var);
     t1p_t* abs = (t1p_t*)abstract1->abstract0->value;
     itv_set_ap_interval(pr->itv, itv, interval);
-    /* on admet que les formes sont affines autrement dit pas réduite à un intervalle avec une borne infinie */
+    /* on admet que les formes sont affines autrement dit pas réduite ? un intervalle avec une borne infinie */
     if (pr->dim <= index) t1p_aff_nsym_create(pr, abs->paf[dim], itv, isunion ? UN : IN);
     else t1p_aff_build(pr, abs->paf[dim], itv, index);
     //if (isunion) abs->paf[dim]->lastu = abs->paf[dim]->end;

@@ -264,8 +264,11 @@ tbool_t t1p_sat_interval(ap_manager_t* man, t1p_t* a, ap_dim_t dim, ap_interval_
 	t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_SAT_INTERVAL);
     man->result.flag_best = tbool_true;
     man->result.flag_exact = tbool_true;
-    ap_interval_set_itv(pr->itv, pr->sat_interval_interval, a->p[dim]);
-    return ap_interval_is_leq(pr->sat_interval_interval,interval);
+    ap_interval_t* ap_interval = ap_interval_alloc();
+    ap_interval_set_itv(pr->itv,ap_interval,a->box[dim]);
+    bool res = ap_interval_is_leq(ap_interval,interval);
+    ap_interval_free(ap_interval);
+    return tbool_of_bool(res);
 }
 
 tbool_t t1p_sat_lincons(ap_manager_t* man, t1p_t* a, ap_lincons0_t* lincons)
