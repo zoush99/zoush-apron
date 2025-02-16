@@ -15,6 +15,8 @@
 #include "ap_interval.h"
 #include "ap_tcons0.h"
 #include "ap_generator0.h"
+#include "itv_linearize.h"  // By zoush99
+
 
 /****************/
 /* Constructors */
@@ -281,11 +283,32 @@ tbool_t t1p_sat_lincons(ap_manager_t* man, t1p_t* a, ap_lincons0_t* lincons)
 }
 
 /* 4.Extraction of properties */
+/// \todo bugs here!!!
+// By zoush99. use box to ger the value of 'expr'
 ap_interval_t* t1p_bound_texpr(ap_manager_t* man, t1p_t* a, ap_texpr0_t* expr)
 {
     CALL();
 	t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_BOUND_TEXPR);
-	not_implemented();
+    // store the computed result
+    ap_interval_t* res = ap_interval_alloc();
+    itv_t tmp;
+    itv_init(tmp);
+    // if the abstract value is bottom, then the result is bottom
+    if (t1p_is_bottom(man,a)) {
+        ap_interval_set_bottom(res);
+    }
+    // else if the abstract value is not bottom
+    else{
+        itv_eval_ap_texpr0(pr->itv, tmp, expr, a->box);
+        ap_interval_set_itv(pr->itv,res,tmp);
+    }
+    // free temporary space
+    itv_clear(tmp);
+
+    man->result.flag_best=tbool_true;
+    man->result.flag_exact=tbool_true;
+
+    return res;
 }
 
 ap_interval_t* t1p_bound_dimension(ap_manager_t* man, t1p_t* a, ap_dim_t dim)

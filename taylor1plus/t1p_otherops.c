@@ -276,9 +276,10 @@ t1p_t t1p_closure(ap_manager_t* man, bool destructive, t1p_t* a)
 {
     CALL();
     t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_CLOSURE);
-	man->result.flag_best = tbool_true;
-	man->result.flag_exact = tbool_true;
-	return destructive ? a : t1p_copy(man,a);
+	// man->result.flag_best = tbool_true;
+	// man->result.flag_exact = tbool_true;
+	// return destructive ? a : t1p_copy(man,a);
+	not_implemented();
 }
 
 void ap_abstract1_aff_build(ap_manager_t* man, ap_abstract1_t* abstract1, ap_var_t var, unsigned int index, ap_interval_t *interval, bool isunion)
