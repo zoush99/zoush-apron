@@ -271,14 +271,10 @@ t1p_t* t1p_widening_old(ap_manager_t* man, t1p_t* a1, t1p_t* a2)
     return res;
 }
 
-// By zoush99
 t1p_t t1p_closure(ap_manager_t* man, bool destructive, t1p_t* a)
 {
     CALL();
     t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_CLOSURE);
-	// man->result.flag_best = tbool_true;
-	// man->result.flag_exact = tbool_true;
-	// return destructive ? a : t1p_copy(man,a);
 	not_implemented();
 }
 

@@ -254,16 +254,13 @@ void t1p_fprint(FILE* stream,
     man->result.flag_exact = tbool_true;
 }
 
-// By zoush99 \todo may be can be optimized
 void t1p_fprintdiff(FILE* stream,
 		ap_manager_t* man,
 		t1p_t* a1, t1p_t* a2,
 		char** name_of_dim)
 {
 	t1p_internal_t* pr = t1p_init_from_manager(man, AP_FUNID_FPRINTDIFF);
-    man->result.flag_best = tbool_true;
-    man->result.flag_exact = tbool_true;
-    return;
+    not_implemented();
 }
 
 void t1p_fdump(FILE* stream, ap_manager_t* man, t1p_t* a)
