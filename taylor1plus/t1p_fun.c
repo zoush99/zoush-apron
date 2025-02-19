@@ -802,6 +802,7 @@ t1p_aff_t* t1p_aff_div(t1p_internal_t* pr, t1p_aff_t* exprA, t1p_aff_t* exprB, t
 
     itv_set_int(one, (long int)1);
     if (itv_is_leq(tmp, exprB->itv)) {
+	/// \todo bugs here!!! By zoush99
 	fprintf(stderr,"(caveat) division by zero.\n");
 	res = t1p_aff_alloc_init(pr);
 	itv_set_top(res->c);
