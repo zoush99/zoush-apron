@@ -226,6 +226,8 @@ void t1p_aff_mul_itv_inplace(t1p_internal_t* pr, t1p_aff_t* exprA, itv_t lambda)
     }
 }
 
+// Commented by zoush99: t1p_aff_mul is a function that multiplies two t1p_aff_t structs together.
+// Choose different algothrims according to the hypercube flag in the t1p_t struct, which is the flag of whether it is constrained affine sets
 t1p_aff_t* t1p_aff_mul(t1p_internal_t* pr, t1p_aff_t* exprA, t1p_aff_t* exprB, t1p_t* env)
 {
     t1p_aff_t* res;

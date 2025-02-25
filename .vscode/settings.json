@@ -7,5 +7,9 @@
         "ap_global0.h": "c",
         "ap_abstract0.h": "c",
         "t1p_meetjoin.h": "c"
+    },
+    "ocaml.sandbox": {
+        "kind": "opam",
+        "switch": "4.14.0"
     }
 }
