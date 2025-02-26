@@ -1047,6 +1047,7 @@ t1p_aff_t* t1p_aff_eval_node_binary (t1p_internal_t* pr, ap_texpr0_node_t* node,
     t1p_aff_fprint(pr, stdout, exprAB[0]);
     t1p_aff_fprint(pr, stdout, exprAB[1]);
 #endif
+
     switch (node->op) 
       {
 	case AP_TEXPR_ADD:
