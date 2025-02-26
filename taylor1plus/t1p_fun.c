@@ -1042,6 +1042,20 @@ t1p_aff_t* t1p_aff_eval_node_binary (t1p_internal_t* pr, ap_texpr0_node_t* node,
     t1p_aff_t* exprAB[2];
     exprAB[0] = t1p_aff_eval_ap_texpr0(pr, node->exprA, env);
     exprAB[1] = t1p_aff_eval_ap_texpr0(pr, node->exprB, env);
+	// By zoush99 {@
+	bool real_dim_flag = false;
+	if (node->type == AP_RTYPE_REAL)	real_dim_flag = true;
+	ap_interval_t* ap_relative_err = ap_interval_alloc();
+    ap_interval_t* ap_absolute_err = ap_interval_alloc();
+    ap_interval_set_double(ap_relative_err, 1-pow(2, -23), 1+pow(2, -23));
+    ap_interval_set_double(ap_absolute_err, -pow(2, -23), pow(2, -149));
+
+    itv_t itv_relative_err; itv_init(itv_relative_err);
+    itv_t itv_absolute_err; itv_init(itv_absolute_err);
+    itv_set_ap_interval(pr->itv, itv_relative_err, ap_relative_err);
+    itv_set_ap_interval(pr->itv, itv_absolute_err, ap_absolute_err);
+	// @}
+
 #ifdef _T1P_DEBUG_FUN
     fprintf(stdout, "### BINARY OPERANDES ###\n");
     t1p_aff_fprint(pr, stdout, exprAB[0]);
@@ -1079,12 +1093,32 @@ t1p_aff_t* t1p_aff_eval_node_binary (t1p_internal_t* pr, ap_texpr0_node_t* node,
       }
     //if (node->exprA->discr != AP_TEXPR_DIM) t1p_aff_free(pr, exprAB[0]);
     //if (node->exprB->discr != AP_TEXPR_DIM) t1p_aff_free(pr, exprAB[1]);
+
+	// By zoush99: we need to consider rounding error for real dimensions
+	if(real_dim_flag && node->op!=AP_TEXPR_MOD){
+        // relative error
+        t1p_aff_mul_itv_inplace(pr, res, itv_relative_err);
+        // absolute error
+        // construct the absolute error noise symbol (only need one)
+        t1p_aff_t* abs_err = t1p_aff_alloc_init(pr);
+        t1p_aff_mul_itv(pr, abs_err, itv_absolute_err);
+        // add the absolute error noise symbol
+        t1p_aff_add_aff(pr, res,res, abs_err);
+		t1p_aff_free(pr, abs_err);
+        // \todo By zoush99
+        }
     t1p_aff_check_free(pr, exprAB[0]);
     t1p_aff_check_free(pr, exprAB[1]);
 #ifdef _T1P_DEBUG_FUN
     fprintf(stdout, "### BINARY RESULT ###\n");
     t1p_aff_fprint(pr, stdout, res);
 #endif
+    // By zoush99 { @}
+    ap_interval_free(ap_relative_err);
+    ap_interval_free(ap_absolute_err);
+    itv_clear(itv_relative_err);
+    itv_clear(itv_absolute_err);
+    // @}
     return res;
 }
 

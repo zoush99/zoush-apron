@@ -78,7 +78,7 @@ t1p_t* t1p_assign_texpr_array(ap_manager_t* man,
     size_t i = 0;
     // By zoush99 { @}
     bool real_dim_flag = false;
-    real_dim_flag = true;
+    if (*tdim>a->intdim) real_dim_flag = true;
     ap_interval_t* ap_relative_err = ap_interval_alloc();
     ap_interval_t* ap_absolute_err = ap_interval_alloc();
     ap_interval_set_double(ap_relative_err, 1-pow(2, -23), 1+pow(2, -23));
@@ -115,6 +115,7 @@ t1p_t* t1p_assign_texpr_array(ap_manager_t* man,
             t1p_aff_mul_itv(pr, abs_err, itv_absolute_err);
             // add the absolute error noise symbol
             t1p_aff_add_aff(pr, res->paf[tdim[i]],res->paf[tdim[i]], abs_err);
+            t1p_aff_free(pr, abs_err);
 
             // \todo By zoush99
         }
