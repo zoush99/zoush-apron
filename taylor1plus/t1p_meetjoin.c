@@ -571,6 +571,7 @@ t1p_t* t1p_join(ap_manager_t* man, bool destructive, t1p_t* a1, t1p_t* a2)
                          /* join two affine form expressions */
                          itv_set(a1->paf[i]->itv, a1->box[i]);
                          itv_set(a2->paf[i]->itv, a2->box[i]);
+						 // Commented by zoush99: use local join of affine set
                          res->paf[i] = t1p_aff_join_constrained6(pr, a1->paf[i], a2->paf[i], a1, a2, res);
                      }
                  }

@@ -287,7 +287,7 @@ t1p_aff_t* t1p_aff_mul_constrained_backup(t1p_internal_t* pr, t1p_aff_t* exprA, 
     checked_malloc(nsym_shared,int,pr->dim,abort(););
 
     int* nsym_shared_hash;
-    /* si on accumule, pour chaque expression, les coeff des symboles indépendants, on rajoute 2 symboles, un pour chaque expression.
+    /* si on accumule, pour chaque expression, les coeff des symboles indï¿½pendants, on rajoute 2 symboles, un pour chaque expression.
        le hash prend en compte ces deux eventuels ajouts.
      */
     checked_malloc(nsym_shared_hash,int,2+pr->dim,abort(););
@@ -480,7 +480,7 @@ t1p_aff_t* t1p_aff_mul_constrained(t1p_internal_t* pr, t1p_aff_t* exprA, t1p_aff
     checked_malloc(nsym_shared,int,pr->dim,abort(););
 
     int* nsym_shared_hash;
-    /* si on accumule, pour chaque expression, les coeff des symboles indépendants, on rajoute 2 symboles, un pour chaque expression.
+    /* si on accumule, pour chaque expression, les coeff des symboles independants, on rajoute 2 symboles, un pour chaque expression.
        le hash prend en compte ces deux eventuels ajouts.
      */
     checked_malloc(nsym_shared_hash,int,2+pr->dim,abort(););
@@ -664,7 +664,7 @@ t1p_aff_t* t1p_aff_mul_non_constrained(t1p_internal_t* pr, t1p_aff_t* exprA, t1p
     checked_malloc(nsym_shared,int,pr->dim,abort(););
 
     int* nsym_shared_hash;
-    /* si on accumule, pour chaque expression, les coeff des symboles indépendants, on rajoute 2 symboles, un pour chaque expression.
+    /* si on accumule, pour chaque expression, les coeff des symboles indï¿½pendants, on rajoute 2 symboles, un pour chaque expression.
        le hash prend en compte ces deux eventuels ajouts.
      */
     checked_malloc(nsym_shared_hash,int,2+pr->dim,abort(););
