@@ -785,6 +785,7 @@ t1p_aff_t* t1p_aff_mul_non_constrained(t1p_internal_t* pr, t1p_aff_t* exprA, t1p
    else if exprB->itv has an infity bound return (1/exprB->itv)*exprA
    else return (1/exprB)*exprA
  */
+// \todo By zoush99, I need to write the code here which is my novelty.
 t1p_aff_t* t1p_aff_div(t1p_internal_t* pr, t1p_aff_t* exprA, t1p_aff_t* exprB, t1p_t* env)
 {
     t1p_aff_t* res;
@@ -1036,6 +1037,7 @@ t1p_aff_t* t1p_aff_eval_node_unary (t1p_internal_t* pr, ap_texpr0_node_t* node, 
     return res;
 }
 
+// \todo By zoush99, I need to write the code here which is my novelty.
 t1p_aff_t* t1p_aff_eval_node_binary (t1p_internal_t* pr, ap_texpr0_node_t* node, t1p_t* env)
 {
     t1p_aff_t* res;
