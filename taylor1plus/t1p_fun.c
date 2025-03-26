@@ -1046,11 +1046,12 @@ t1p_aff_t* t1p_aff_eval_node_binary (t1p_internal_t* pr, ap_texpr0_node_t* node,
     exprAB[1] = t1p_aff_eval_ap_texpr0(pr, node->exprB, env);
 	// By zoush99 {@
 	bool real_dim_flag = false;
-	if (node->type == AP_RTYPE_REAL)	real_dim_flag = true;
+	if (node->type == AP_RTYPE_REAL)
+		real_dim_flag = true;
 	ap_interval_t* ap_relative_err = ap_interval_alloc();
     ap_interval_t* ap_absolute_err = ap_interval_alloc();
-    ap_interval_set_double(ap_relative_err, 1-pow(2, -23), 1+pow(2, -23));
-    ap_interval_set_double(ap_absolute_err, -pow(2, -23), pow(2, -149));
+    ap_interval_set_double(ap_relative_err, pow(2, -23), pow(2, -23));
+    ap_interval_set_double(ap_absolute_err, pow(2, -149), pow(2, -149));
 
     itv_t itv_relative_err; itv_init(itv_relative_err);
     itv_t itv_absolute_err; itv_init(itv_absolute_err);
@@ -1069,6 +1070,68 @@ t1p_aff_t* t1p_aff_eval_node_binary (t1p_internal_t* pr, ap_texpr0_node_t* node,
 	case AP_TEXPR_ADD:
 	      {
 		res = t1p_aff_add(pr, exprAB[0], exprAB[1], env);
+		if(real_dim_flag){
+			itv_t itv_temp;itv_init(itv_temp);
+			itv_t itv_two_delta; itv_init(itv_two_delta);
+			itv_t itv_one_plus_two_delta; itv_init(itv_one_plus_two_delta);
+			t1p_aff_t* temp_res;
+			itv_set_int(itv_temp, 2);
+			itv_mul(pr->itv, itv_two_delta, itv_relative_err, itv_temp);
+			itv_set_int(itv_temp, 1);
+			itv_add(itv_one_plus_two_delta, itv_temp, itv_relative_err);	// 1+2*delta_r
+			// relative error
+			temp_res=t1p_aff_mul_itv(pr, res, itv_one_plus_two_delta);	// temp_res = res*(1+2*delta_r)
+			
+			// absolute error
+			itv_t r0_x_plus_y; // 假设这些变量已经初始化并赋值
+			itv_t temp1, temp2, result_interval;
+			
+			num_t lower_bound,upper_bound;
+
+			// 初始化区间变量
+			itv_init(r0_x_plus_y);
+			itv_init(temp1);
+			itv_init(temp2);
+			itv_init(result_interval);
+
+			itv_set(r0_x_plus_y, res->c); // r0_x_plus_y = res->c
+
+			// 计算 lower_bound = -4 * delta_r * (r0_x_plus_y) - 3 * delta_a
+			itv_set_int(itv_temp, -4);
+			itv_mul(pr->itv, temp1, r0_x_plus_y, itv_temp);   // temp1 = -4 * r0_x_plus_y
+			itv_mul(pr->itv, temp2, itv_relative_err, temp1);     // temp2 = -4 * delta_r * r0_x_plus_y
+			itv_set_int(itv_temp, -3);
+			itv_mul(pr->itv, temp1, itv_absolute_err, itv_temp); // temp1 = -3 * delta_a
+			itv_add(temp1, temp2, temp1);          // temp1 = -4 * delta_r * r0_x_plus_y - 3 * delta_a
+
+			num_set(lower_bound, temp1->inf); // 计算 lower_bound = -4 * delta_r * (r0_x_plus_y) - 3 * delta_a
+			// 计算 upper_bound = 3 * delta_a
+			itv_set_int(itv_temp, 3);
+			itv_mul(pr->itv, temp2, itv_absolute_err, itv_temp); // upper_bound = 3 * delta_a
+			num_set(upper_bound, temp2->sup); // 计算 upper_bound = 3 * delta_a
+
+			// 设置最终区间 result_interval = [lower_bound, upper_bound]
+			itv_set_num2(result_interval, lower_bound, upper_bound);
+
+			// construct the absolute error noise symbol (only need one)
+			t1p_aff_t* abs_err = create_affine_form_with_interval(pr, result_interval);
+
+			// add the absolute error noise symbol
+			t1p_aff_add_aff(pr, res, temp_res, abs_err);
+			t1p_aff_free(pr,temp_res);
+			t1p_aff_free(pr,abs_err);
+			// 清理临时变量
+			itv_clear(itv_two_delta);
+			itv_clear(itv_one_plus_two_delta);
+			num_clear(lower_bound);
+			num_clear(upper_bound);
+			itv_clear(itv_temp);
+			itv_clear(temp1);
+			itv_clear(temp2);
+			itv_clear(result_interval);
+			itv_clear(r0_x_plus_y);
+		}
+
 		break;
 	      }
 	case AP_TEXPR_SUB:
@@ -1096,19 +1159,6 @@ t1p_aff_t* t1p_aff_eval_node_binary (t1p_internal_t* pr, ap_texpr0_node_t* node,
     //if (node->exprA->discr != AP_TEXPR_DIM) t1p_aff_free(pr, exprAB[0]);
     //if (node->exprB->discr != AP_TEXPR_DIM) t1p_aff_free(pr, exprAB[1]);
 
-	// By zoush99: we need to consider rounding error for real dimensions
-	if(real_dim_flag && node->op!=AP_TEXPR_MOD){
-        // relative error
-        t1p_aff_mul_itv_inplace(pr, res, itv_relative_err);
-        // absolute error
-        // construct the absolute error noise symbol (only need one)
-        t1p_aff_t* abs_err = t1p_aff_alloc_init(pr);
-        t1p_aff_mul_itv(pr, abs_err, itv_absolute_err);
-        // add the absolute error noise symbol
-        t1p_aff_add_aff(pr, res,res, abs_err);
-		t1p_aff_free(pr, abs_err);
-        // \todo By zoush99
-        }
     t1p_aff_check_free(pr, exprAB[0]);
     t1p_aff_check_free(pr, exprAB[1]);
 #ifdef _T1P_DEBUG_FUN

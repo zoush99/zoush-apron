@@ -112,7 +112,7 @@ typedef struct optpr_problem_t {
     itv_t gamma; /* |u0| < gamma*lambda */
     Li* litab; /* table of Li lines and their associated eps */
     optpr_indexinfo_t* T; /* tableau de taille n */
-    uint_t sizeJ; /* size of litab % détermine la complexité du problème */
+    uint_t sizeJ; /* size of litab % détermine la complexit? du problème */
     uint_t size; /* nb de symboles en tout: le "n" */
     itv_t optval; /* optimal value */
     optpr_point_t optsol; /* optimal point, TODO: pour le moment on prend le dernier qui optimise, mais il peut y en avoir plusieurs */
@@ -153,7 +153,7 @@ typedef struct _t1p_internal_t {
     Tobj2               mubGlobal;
     uint_t*             inputns;
     uint_t              epssize;
-    uint_t              it;	        /* compteur d'iterations à la Kleene */
+    uint_t              it;	        /* compteur d'iterations ? la Kleene */
 } t1p_internal_t;
 
 /***********/
@@ -356,7 +356,7 @@ static inline int argmin(t1p_internal_t* pr, itv_t res, itv_t a, itv_t b);
 void optpr_init(t1p_internal_t* pr);
 void optpr_clear(t1p_internal_t* pr);
 void optpr_u0_iszero(t1p_internal_t* pr); /* inject u0 = 0 */
-void optpr_build(t1p_internal_t* pr, itv_t alphaix, itv_t alphaiy, t1p_nsym_t* pnsym, itv_t nsymItv1, itv_t nsymItv2, indicesSets_t I); /* construire le problème à résoudre */
+void optpr_build(t1p_internal_t* pr, itv_t alphaix, itv_t alphaiy, t1p_nsym_t* pnsym, itv_t nsymItv1, itv_t nsymItv2, indicesSets_t I); /* construire le problème ? résoudre */
 void optpr_solve(t1p_internal_t* pr, itv_t alpha0x, itv_t alpha0, itv_t midgx, itv_t midgy, itv_t taux, itv_t tauy, t1p_aff_t* res);
 
 /**************************************************************************************************/
@@ -624,6 +624,25 @@ static inline void t1p_aff_nsym_create(t1p_internal_t *pr, t1p_aff_t *expr, itv_
 	expr->l++;
     }
     itv_clear(zero);
+}
+
+// By zoush99: create a new affine form with itv_t type, which is not a point
+static inline t1p_aff_t* create_affine_form_with_interval(t1p_internal_t* pr, itv_t interval) {
+    t1p_aff_t* new_affine_form = t1p_aff_alloc_init(pr);
+
+    itv_t mid, dev;
+    itv_init(mid);
+    itv_init(dev);
+    itv_middev(pr->itv, mid, dev, interval);
+
+    itv_set(new_affine_form->c, mid);
+
+    t1p_aff_nsym_create(pr, new_affine_form, dev, IN); // add a new noise symbol to the affine form
+
+    itv_clear(mid);
+    itv_clear(dev);
+
+    return new_affine_form;
 }
 
 /* add a new aaterm to the affine form with an already existing noise symbol (used to build by hand an affine form) */
@@ -1857,7 +1876,7 @@ static inline t1p_aff_t * t1p_aff_join_constrained7(t1p_internal_t* pr, t1p_aff_
 		    } else {
 			/* J */
 			//itv_sub(tmp, alphaix, alphaiy); /* alpha_i^x - alpha_i^y */
-			optpr_build(pr, alphaix, alphaiy, pnsym, nsymItv1, nsymItv2, J); /* construire le problème à résoudre */
+			optpr_build(pr, alphaix, alphaiy, pnsym, nsymItv1, nsymItv2, J); /* construire le problème ? résoudre */
 		    }
 		    pnsym = NULL;
 		}
@@ -4889,7 +4908,7 @@ static inline void t1p_aff_cons_eq_lambda(t1p_internal_t* pr, itv_t* res, t1p_af
 		p = p->n ;
 		q = q->n ;
 	    } else if (p->pnsym->index < q->pnsym->index) {
-		/* ajouter 0 dans les valeurs à trier avec l'indice d'epsilon */
+		/* ajouter 0 dans les valeurs ? trier avec l'indice d'epsilon */
 		array[i] = (obj*)calloc(1,sizeof(obj));
 		    itv_init(array[i]->coeff);
 		    itv_init(array[i]->itv);
@@ -4914,7 +4933,7 @@ static inline void t1p_aff_cons_eq_lambda(t1p_internal_t* pr, itv_t* res, t1p_af
 		q = q->n ;
 	    }
 	} else if (p) {
-	    /* ajouter 0 dans les valeurs à trier avec l'indice d'epsilon */
+	    /* ajouter 0 dans les valeurs ? trier avec l'indice d'epsilon */
 	    array[i] = (obj*)calloc(1,sizeof(obj));
 		    itv_init(array[i]->coeff);
 		    itv_init(array[i]->itv);

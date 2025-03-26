@@ -6,7 +6,10 @@
         "pk.h": "c",
         "ap_global0.h": "c",
         "ap_abstract0.h": "c",
-        "t1p_meetjoin.h": "c"
+        "t1p_meetjoin.h": "c",
+        "__tree": "c",
+        "map": "c",
+        "set": "c"
     },
     "ocaml.sandbox": {
         "kind": "opam",
