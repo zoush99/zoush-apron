@@ -780,6 +780,72 @@ t1p_aff_t* t1p_aff_mul_non_constrained(t1p_internal_t* pr, t1p_aff_t* exprA, t1p
     return res;
 }
 
+void refine_affine_div_bounds(t1p_internal_t* pr, t1p_aff_t* x, t1p_aff_t* y, itv_t lower_bound, itv_t upper_bound, size_t counter) {
+    // 初始化变量
+    itv_t itv_temp, itv_mid, w_lower, w_upper;
+    itv_t itv_two;
+    itv_init(itv_temp);
+    itv_init(itv_mid);
+    itv_init(w_lower);
+    itv_init(w_upper);
+    itv_init(itv_two);
+
+    itv_set_int(itv_two, 2); // itv_two = 2
+
+    size_t current_counter = 0;
+
+    // temp = (lower_bound + upper_bound) / 2
+    itv_add(itv_mid, lower_bound, upper_bound); // mid = lower_bound + upper_bound
+    itv_div(pr->itv, itv_temp, itv_mid, itv_two); // temp = (lower_bound + upper_bound) / 2
+
+    // 开始区间搜索
+    while ((itv_is_pos(lower_bound) || itv_is_neg(upper_bound)) && current_counter < counter) {
+        // 计算 w = x - temp * y
+        t1p_aff_t* temp_y = t1p_aff_mul_itv(pr, y, itv_temp); // temp_y = temp * y
+        t1p_aff_t* w = t1p_aff_sub(pr, x, temp_y, NULL);      // w = x - temp * y
+
+        // 获取 w 的上下界
+        itv_set(w_lower, w->itv); // w_lower = lower bound of w
+        itv_set(w_upper, w->itv); // w_upper = upper bound of w
+
+        // 更新计数器
+        current_counter++;
+
+        // 根据 w 的上下界更新 temp 和 lower_bound/upper_bound
+        if (itv_is_neg(w_upper)) {
+            // 如果 w 的上界小于等于 0，更新 upper_bound
+            itv_set(upper_bound, itv_temp); // upper_bound = temp
+            itv_add(itv_mid, lower_bound, upper_bound);
+            itv_div(pr->itv, itv_temp, itv_mid, itv_two); // temp = (lower_bound + upper_bound) / 2
+        } else if (itv_is_pos(w_lower)) {
+            // 如果 w 的下界大于等于 0，更新 lower_bound
+            itv_set(lower_bound, itv_temp); // lower_bound = temp
+            itv_add(itv_mid, lower_bound, upper_bound);
+            itv_div(pr->itv, itv_temp, itv_mid, itv_two); // temp = (lower_bound + upper_bound) / 2
+        } else {
+            // 如果 w 的上下界跨越 0，根据 lower_bound 和 upper_bound 的关系调整 temp
+            if (itv_is_neg(lower_bound) && itv_is_pos(upper_bound)) {
+                itv_add(itv_mid, upper_bound, itv_temp);
+                itv_div(pr->itv, itv_temp, itv_mid, itv_two); // temp = (upper_bound + temp) / 2
+            } else {
+                itv_add(itv_mid, lower_bound, itv_temp);
+                itv_div(pr->itv, itv_temp, itv_mid, itv_two); // temp = (lower_bound + temp) / 2
+            }
+        }
+
+        // 清理临时变量
+        t1p_aff_clear(pr, temp_y);
+        t1p_aff_clear(pr, w);
+    }
+
+    // 清理资源
+    itv_clear(itv_temp);
+    itv_clear(itv_mid);
+    itv_clear(w_lower);
+    itv_clear(w_upper);
+    itv_clear(itv_two);
+}
+
 /* computes exprA/exprB.
    If 0 \in exprB->itv, return top + caveat
    else if exprB->itv has an infity bound return (1/exprB->itv)*exprA
@@ -871,7 +937,32 @@ t1p_aff_t* t1p_aff_div(t1p_internal_t* pr, t1p_aff_t* exprA, t1p_aff_t* exprB, t
 	}
     }
 
-    itv_clear(box);
+    
+	// begin use interval search to get the result
+		// 初始化上下界和搜索次数
+	itv_t lower_bound, upper_bound;
+	itv_init(lower_bound);
+	itv_init(upper_bound);
+	
+	// 设置初始上下界
+	itv_set_num(lower_bound, res->itv->inf); // 下界为结果区间的下界
+	itv_set_num(upper_bound, res->itv->sup); // 上界为结果区间的上界
+	
+	size_t max_counter = 10; // 设置最大搜索次数
+	
+	// 调用 refine_affine_div_bounds 函数进行精化
+	refine_affine_div_bounds(pr, exprA, exprB, lower_bound, upper_bound, max_counter);
+	
+	// 更新结果区间
+	itv_set_num2(res->itv, lower_bound->inf, upper_bound->sup);
+	
+	// \todo By zoush99, have not use the refined interval to update the coefficient of the new noise symbol.
+	
+	// 清理资源
+	itv_clear(lower_bound);
+	itv_clear(upper_bound);
+	
+	itv_clear(box);
     itv_clear(one);
     itv_clear(a); itv_clear(b);
     itv_clear(zeta); itv_clear(alpha); itv_clear(beta);

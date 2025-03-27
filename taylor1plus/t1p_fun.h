@@ -52,6 +52,9 @@ t1p_aff_t* t1p_aff_mul_constrained(t1p_internal_t* pr, t1p_aff_t* exprA, t1p_aff
 t1p_aff_t* t1p_aff_mul_itv(t1p_internal_t* pr, t1p_aff_t* src, itv_t lambda);
 void t1p_aff_mul_itv_inplace(t1p_internal_t* pr, t1p_aff_t* exprA, itv_t lambda);
 
+// By zoush99
+void refine_affine_div_bounds(t1p_internal_t* pr, t1p_aff_t* x, t1p_aff_t* y, itv_t lower_bound, itv_t upper_bound, size_t counter);
+
 t1p_aff_t* t1p_aff_div(t1p_internal_t* pr, t1p_aff_t* a, t1p_aff_t* b, t1p_t* env);
 
 t1p_aff_t* t1p_aff_sqrt(t1p_internal_t* pr, t1p_aff_t* a, t1p_t* env);
