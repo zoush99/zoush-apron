@@ -780,72 +780,6 @@ t1p_aff_t* t1p_aff_mul_non_constrained(t1p_internal_t* pr, t1p_aff_t* exprA, t1p
     return res;
 }
 
-void refine_affine_div_bounds(t1p_internal_t* pr, t1p_aff_t* x, t1p_aff_t* y, itv_t lower_bound, itv_t upper_bound, size_t counter) {
-    // 初始化变量
-    itv_t itv_temp, itv_mid, w_lower, w_upper;
-    itv_t itv_two;
-    itv_init(itv_temp);
-    itv_init(itv_mid);
-    itv_init(w_lower);
-    itv_init(w_upper);
-    itv_init(itv_two);
-
-    itv_set_int(itv_two, 2); // itv_two = 2
-
-    size_t current_counter = 0;
-
-    // temp = (lower_bound + upper_bound) / 2
-    itv_add(itv_mid, lower_bound, upper_bound); // mid = lower_bound + upper_bound
-    itv_div(pr->itv, itv_temp, itv_mid, itv_two); // temp = (lower_bound + upper_bound) / 2
-
-    // 开始区间搜索
-    while ((itv_is_pos(lower_bound) || itv_is_neg(upper_bound)) && current_counter < counter) {
-        // 计算 w = x - temp * y
-        t1p_aff_t* temp_y = t1p_aff_mul_itv(pr, y, itv_temp); // temp_y = temp * y
-        t1p_aff_t* w = t1p_aff_sub(pr, x, temp_y, NULL);      // w = x - temp * y
-
-        // 获取 w 的上下界
-        itv_set(w_lower, w->itv); // w_lower = lower bound of w
-        itv_set(w_upper, w->itv); // w_upper = upper bound of w
-
-        // 更新计数器
-        current_counter++;
-
-        // 根据 w 的上下界更新 temp 和 lower_bound/upper_bound
-        if (itv_is_neg(w_upper)) {
-            // 如果 w 的上界小于等于 0，更新 upper_bound
-            itv_set(upper_bound, itv_temp); // upper_bound = temp
-            itv_add(itv_mid, lower_bound, upper_bound);
-            itv_div(pr->itv, itv_temp, itv_mid, itv_two); // temp = (lower_bound + upper_bound) / 2
-        } else if (itv_is_pos(w_lower)) {
-            // 如果 w 的下界大于等于 0，更新 lower_bound
-            itv_set(lower_bound, itv_temp); // lower_bound = temp
-            itv_add(itv_mid, lower_bound, upper_bound);
-            itv_div(pr->itv, itv_temp, itv_mid, itv_two); // temp = (lower_bound + upper_bound) / 2
-        } else {
-            // 如果 w 的上下界跨越 0，根据 lower_bound 和 upper_bound 的关系调整 temp
-            if (itv_is_neg(lower_bound) && itv_is_pos(upper_bound)) {
-                itv_add(itv_mid, upper_bound, itv_temp);
-                itv_div(pr->itv, itv_temp, itv_mid, itv_two); // temp = (upper_bound + temp) / 2
-            } else {
-                itv_add(itv_mid, lower_bound, itv_temp);
-                itv_div(pr->itv, itv_temp, itv_mid, itv_two); // temp = (lower_bound + temp) / 2
-            }
-        }
-
-        // 清理临时变量
-        t1p_aff_clear(pr, temp_y);
-        t1p_aff_clear(pr, w);
-    }
-
-    // 清理资源
-    itv_clear(itv_temp);
-    itv_clear(itv_mid);
-    itv_clear(w_lower);
-    itv_clear(w_upper);
-    itv_clear(itv_two);
-}
-
 /* computes exprA/exprB.
    If 0 \in exprB->itv, return top + caveat
    else if exprB->itv has an infity bound return (1/exprB->itv)*exprA
@@ -937,37 +871,6 @@ t1p_aff_t* t1p_aff_div(t1p_internal_t* pr, t1p_aff_t* exprA, t1p_aff_t* exprB, t
 	}
     }
 
-    
-	// begin use interval search to get the result
-		// 初始化上下界和搜索次数
-	itv_t lower_bound, upper_bound;
-	itv_init(lower_bound);
-	itv_init(upper_bound);
-	
-	// 设置初始上下界
-	itv_set_num(lower_bound, res->itv->inf); // 下界为结果区间的下界
-	itv_set_num(upper_bound, res->itv->sup); // 上界为结果区间的上界
-	
-	size_t max_counter = 10; // 设置最大搜索次数
-	
-	// 调用 refine_affine_div_bounds 函数进行精化
-	refine_affine_div_bounds(pr, exprA, exprB, lower_bound, upper_bound, max_counter);
-	
-	// 更新结果区间
-	itv_set_num2(res->itv, lower_bound->inf, upper_bound->sup);
-	
-	// \todo By zoush99, have not use the refined interval to update the coefficient of the new noise symbol.
-	
-	// 清理资源
-	itv_clear(lower_bound);
-	itv_clear(upper_bound);
-	
-	itv_clear(box);
-    itv_clear(one);
-    itv_clear(a); itv_clear(b);
-    itv_clear(zeta); itv_clear(alpha); itv_clear(beta);
-    itv_clear(mid); itv_clear(dev);
-    itv_clear(tmp);
     return res;
 }
 
@@ -1135,23 +1038,6 @@ t1p_aff_t* t1p_aff_eval_node_binary (t1p_internal_t* pr, ap_texpr0_node_t* node,
     t1p_aff_t* exprAB[2];
     exprAB[0] = t1p_aff_eval_ap_texpr0(pr, node->exprA, env);
     exprAB[1] = t1p_aff_eval_ap_texpr0(pr, node->exprB, env);
-	// By zoush99 {@
-	bool real_dim_flag = false;
-	if (node->type == AP_RTYPE_REAL)
-		real_dim_flag = true;
-	ap_interval_t* ap_relative_err = ap_interval_alloc();
-    ap_interval_t* ap_absolute_err = ap_interval_alloc();
-    ap_interval_set_double(ap_relative_err, pow(2, -23), pow(2, -23));
-    ap_interval_set_double(ap_absolute_err, pow(2, -149), pow(2, -149));
-
-    itv_t delta_r; itv_init(delta_r);
-    itv_t delta_a; itv_init(delta_a);
-	itv_set_ap_interval(pr->itv, delta_r, ap_relative_err);
-	itv_set_ap_interval(pr->itv, delta_a, ap_absolute_err);
-	ap_interval_free(ap_relative_err);
-	ap_interval_free(ap_absolute_err);
-	
-	// @}
 
 #ifdef _T1P_DEBUG_FUN
     fprintf(stdout, "### BINARY OPERANDES ###\n");
@@ -1164,226 +1050,16 @@ t1p_aff_t* t1p_aff_eval_node_binary (t1p_internal_t* pr, ap_texpr0_node_t* node,
 	case AP_TEXPR_ADD:
 	      {
 		res = t1p_aff_add(pr, exprAB[0], exprAB[1], env);
-		if(real_dim_flag){
-			itv_t itv_temp;itv_init(itv_temp);
-			itv_t itv_two_delta; itv_init(itv_two_delta);
-			itv_t itv_one_plus_two_delta; itv_init(itv_one_plus_two_delta);
-			t1p_aff_t* temp_res;
-			itv_set_int(itv_temp, 2);
-			itv_mul(pr->itv, itv_two_delta, delta_r, itv_temp);
-			itv_set_int(itv_temp, 1);
-			itv_add(itv_one_plus_two_delta, itv_temp, delta_r);	// 1+2*delta_r
-			// relative error
-			temp_res=t1p_aff_mul_itv(pr, res, itv_one_plus_two_delta);	// temp_res = res*(1+2*delta_r)
-			
-			// absolute error
-			itv_t r0_x_plus_y;
-			itv_t temp1, temp2, result_interval;
-			
-			num_t lower_bound,upper_bound;
-
-			itv_init(r0_x_plus_y);
-			itv_init(temp1);
-			itv_init(temp2);
-			itv_init(result_interval);
-
-			itv_set(r0_x_plus_y, res->c); // r0_x_plus_y = res->c
-
-			// compute lower_bound = -4 * delta_r * (r0_x_plus_y) - 3 * delta_a
-			itv_set_int(itv_temp, -4);
-			itv_mul(pr->itv, temp1, r0_x_plus_y, itv_temp);   // temp1 = -4 * r0_x_plus_y
-			itv_mul(pr->itv, temp2, delta_r, temp1);     // temp2 = -4 * delta_r * r0_x_plus_y
-			itv_set_int(itv_temp, -3);
-			itv_mul(pr->itv, temp1, delta_a, itv_temp); // temp1 = -3 * delta_a
-			itv_add(temp1, temp2, temp1);          // temp1 = -4 * delta_r * r0_x_plus_y - 3 * delta_a
-
-			num_set(lower_bound, temp1->inf); // compute lower_bound = -4 * delta_r * (r0_x_plus_y) - 3 * delta_a
-			// compute upper_bound = 3 * delta_a
-			itv_set_int(itv_temp, 3);
-			itv_mul(pr->itv, temp2, delta_a, itv_temp); // upper_bound = 3 * delta_a
-			num_set(upper_bound, temp2->sup); // compute upper_bound = 3 * delta_a
-
-			// result_interval = [lower_bound, upper_bound]
-			itv_set_num2(result_interval, lower_bound, upper_bound);
-
-			// construct the absolute error noise symbol (only need one)
-			t1p_aff_t* new_noise = create_affine_form_with_interval(pr, result_interval);
-
-			t1p_aff_add_aff(pr, res, temp_res, new_noise);
-
-			t1p_aff_free(pr,temp_res);
-			t1p_aff_free(pr,new_noise);
-			itv_clear(itv_two_delta);
-			itv_clear(itv_one_plus_two_delta);
-			num_clear(lower_bound);
-			num_clear(upper_bound);
-			itv_clear(itv_temp);
-			itv_clear(temp1);
-			itv_clear(temp2);
-			itv_clear(result_interval);
-			itv_clear(r0_x_plus_y);
-		}
-
 		break;
 	      }
 	case AP_TEXPR_SUB:
 	      {
 		res = t1p_aff_sub(pr, exprAB[0], exprAB[1], env);
-		if(real_dim_flag){
-			itv_t itv_temp;itv_init(itv_temp);
-			itv_t itv_two_delta; itv_init(itv_two_delta);
-			itv_t itv_one_plus_two_delta; itv_init(itv_one_plus_two_delta);
-			t1p_aff_t* temp_res;
-			itv_set_int(itv_temp, 2);
-			itv_mul(pr->itv, itv_two_delta, delta_r, itv_temp);
-			itv_set_int(itv_temp, 1);
-			itv_add(itv_one_plus_two_delta, itv_temp, delta_r);	// 1+2*delta_r
-			// relative error
-			temp_res=t1p_aff_mul_itv(pr, res, itv_one_plus_two_delta);	// temp_res = res*(1+2*delta_r)
-			
-			// absolute error
-			itv_t r0_x_plus_y;
-			itv_t temp1, temp2, result_interval;
-			
-			num_t lower_bound,upper_bound;
-
-			itv_init(r0_x_plus_y);
-			itv_init(temp1);
-			itv_init(temp2);
-			itv_init(result_interval);
-
-			itv_set(r0_x_plus_y, res->c); // r0_x_plus_y = res->c
-
-			// compute lower_bound = -4 * delta_r * (r0_x_plus_y) - 3 * delta_a
-			itv_set_int(itv_temp, -4);
-			itv_mul(pr->itv, temp1, r0_x_plus_y, itv_temp);   // temp1 = -4 * r0_x_plus_y
-			itv_mul(pr->itv, temp2, delta_r, temp1);     // temp2 = -4 * delta_r * r0_x_plus_y
-			itv_set_int(itv_temp, -3);
-			itv_mul(pr->itv, temp1, delta_a, itv_temp); // temp1 = -3 * delta_a
-			itv_add(temp1, temp2, temp1);          // temp1 = -4 * delta_r * r0_x_plus_y - 3 * delta_a
-
-			num_set(lower_bound, temp1->inf); // compute lower_bound = -4 * delta_r * (r0_x_plus_y) - 3 * delta_a
-			// compute upper_bound = 3 * delta_a
-			itv_set_int(itv_temp, 3);
-			itv_mul(pr->itv, temp2, delta_a, itv_temp); // upper_bound = 3 * delta_a
-			num_set(upper_bound, temp2->sup); // compute upper_bound = 3 * delta_a
-
-			// result_interval = [lower_bound, upper_bound]
-			itv_set_num2(result_interval, lower_bound, upper_bound);
-
-			// construct the absolute error noise symbol (only need one)
-			t1p_aff_t* new_noise = create_affine_form_with_interval(pr, result_interval);
-
-			t1p_aff_add_aff(pr, res, temp_res, new_noise);
-
-			t1p_aff_free(pr,temp_res);
-			t1p_aff_free(pr,new_noise);
-			itv_clear(itv_two_delta);
-			itv_clear(itv_one_plus_two_delta);
-			num_clear(lower_bound);
-			num_clear(upper_bound);
-			itv_clear(itv_temp);
-			itv_clear(temp1);
-			itv_clear(temp2);
-			itv_clear(result_interval);
-			itv_clear(r0_x_plus_y);
-		}
-
 		break;
 	      }
 	case AP_TEXPR_MUL:
 	      {
 		res = t1p_aff_mul(pr, exprAB[0], exprAB[1], env);
-		if (real_dim_flag) {
-			// 初始化变量
-			itv_t itv_temp; itv_init(itv_temp);
-			itv_t itv_three; itv_init(itv_three);
-			itv_t itv_one; itv_init(itv_one);
-			itv_t itv_delta_r_term; itv_init(itv_delta_r_term);
-			itv_t itv_delta_a_term; itv_init(itv_delta_a_term);
-			itv_t itv_relative_error; itv_init(itv_relative_error);
-			itv_t itv_absolute_error; itv_init(itv_absolute_error);
-			itv_t result_interval; itv_init(result_interval);
-		
-			num_t lower_bound, upper_bound;
-			num_init(lower_bound);
-			num_init(upper_bound);
-			t1p_aff_t * r_x_times_y;
-			t1p_aff_t * r_x_plus_y;
-		
-			// compute r_x_times_y = r_x * r_y
-			r_x_times_y=res;
-		
-			// compute r_x_plus_y = r_x + r_y
-			r_x_plus_y=t1p_aff_add(pr, exprAB[0], exprAB[1],env); 
-		
-			// compute delta_r_term = delta_r * (3 + delta_a)
-			itv_set_int(itv_temp, 3);
-			itv_add(itv_temp, itv_temp, delta_a); // itv_temp = 3 + delta_a
-			itv_mul(pr->itv, itv_delta_r_term, delta_r, itv_temp); // itv_delta_r_term = delta_r * (3 + delta_a)
-		
-			// compute relative_error = (1 + delta_r_term) * r_x_times_y
-			itv_set_int(itv_temp, 1);
-			// itv_relative_error = 1 + delta_r * (3 + delta_a)
-			itv_add(itv_relative_error, itv_temp, itv_delta_r_term); 
-			t1p_aff_mul_itv_inplace(pr, r_x_times_y, itv_relative_error);
-		
-			// compute delta_a_term = delta_a * (1 + delta_a)
-			itv_set_int(itv_temp, 1);
-			itv_add(itv_temp, itv_temp, delta_a); // itv_temp = 1 + delta_a
-			itv_mul(pr->itv, itv_delta_a_term, delta_a, itv_temp); // itv_delta_a_term = delta_a * (1 + delta_a)
-		
-			// compute absolute_error = delta_a_term * r_x_plus_y
-			t1p_aff_mul_itv_inplace(pr, r_x_plus_y, itv_absolute_error);
-
-			// compute result_interval = relative_error + absolute_error
-			// itv_add(result_interval, itv_relative_error, itv_absolute_error);
-			t1p_aff_add_aff(pr, res, r_x_times_y, r_x_plus_y);
-		
-			// \todo By zoush99
-			// construct new noise symbol for the result
-			itv_t itv_temp1; itv_init(itv_temp1);
-			// 计算 delta_r_term = 3 * delta_r
-			itv_set_int(itv_temp, 3);							  // itv_temp = 3
-			itv_mul(pr->itv, itv_delta_r_term, delta_r, itv_temp); // itv_delta_r_term = 3 * delta_r
-			
-			// 计算 delta_a_term = delta_a * (1 + delta_r + delta_a)
-			itv_add(itv_temp1, delta_r, delta_a);                  // itv_temp1 = delta_r + delta_a
-			itv_set_int(itv_temp,1);
-			itv_add(itv_temp, itv_temp, itv_temp1);                 // itv_temp = 1 + delta_r + delta_a
-			itv_mul(pr->itv, itv_delta_a_term, delta_a, itv_temp); // itv_delta_a_term = delta_a * (1 + delta_r + delta_a)
-			
-			// 计算 lower_bound = -1 - itv_delta_r_term - itv_delta_a_term
-			itv_set_int(itv_temp, -1);                         // itv_temp = -1
-			itv_sub(itv_temp, itv_temp, itv_delta_r_term);         // itv_temp = -1 - 3 * delta_r
-			itv_sub(itv_temp, itv_temp, itv_delta_a_term);         // itv_temp = -1 - 3 * delta_r - delta_a * (1 + delta_r + delta_a)
-			
-			// 设置最终区间 result_interval = [lower_bound, 0]
-			num_set(lower_bound, itv_temp->inf);
-			num_set_int(upper_bound, 0);
-			itv_set_num2(result_interval, lower_bound, upper_bound);	// result_interval = [-1 - 3 * delta_r - delta_a * (1 + delta_r + delta_a), 0]
-			
-			// 清理资源
-			
-			t1p_aff_t* new_noise = create_affine_form_with_interval(pr, result_interval);
-		
-			// 将绝对误差噪声符号添加到结果中
-			t1p_aff_add_aff(pr, res, res, new_noise);
-		
-			// 清理资源
-			itv_clear(itv_temp);
-			itv_clear(itv_temp1);
-			itv_clear(itv_delta_r_term);
-			itv_clear(itv_delta_a_term);
-			itv_clear(itv_relative_error);
-			itv_clear(itv_absolute_error);
-			itv_clear(result_interval);
-			num_clear(lower_bound);
-			num_clear(upper_bound);
-			t1p_aff_clear(pr, r_x_times_y);
-			t1p_aff_clear(pr, r_x_plus_y);
-			t1p_aff_clear(pr,new_noise);
-		}
 		break;
 	      }
 	case AP_TEXPR_DIV:
@@ -1391,142 +1067,6 @@ t1p_aff_t* t1p_aff_eval_node_binary (t1p_internal_t* pr, ap_texpr0_node_t* node,
 		// Compute res = exprAB[0] / exprAB[1]
 		res = t1p_aff_div(pr, exprAB[0], exprAB[1], env);
 	
-		if (real_dim_flag) {
-			// Initialize variables
-			itv_t itv_temp, itv_temp1,itv_delta_r_term, itv_delta_a_term;
-			itv_t result_interval1, result_interval2, result_interval3;
-			t1p_aff_t *r_x_div_y, *new_noise1, *new_noise2, *new_noise3;
-	
-			itv_init(itv_temp);
-			itv_init(itv_temp1);
-			itv_init(itv_delta_r_term);
-			itv_init(itv_delta_a_term);
-			itv_init(result_interval1);
-			itv_init(result_interval2);
-			itv_init(result_interval3);
-	
-			// Compute r_x_div_y = r_x / r_y
-			r_x_div_y = t1p_aff_copy(pr, res);
-	
-			// --- Compute Δ1 = [-2δ_r * r_0^x - δ_a * (r_0^z + 1), 0] ---
-			itv_t r0_x, r0_z;
-			itv_init(r0_x);
-			itv_init(r0_z);
-	
-			itv_set(r0_x, exprAB[0]->c); // r0_x = midpoint of r_x
-			itv_set(r0_z, r_x_div_y->c); // r0_z = midpoint of r_x / r_y
-			
-			itv_set_int(itv_temp, -2);
-			itv_mul(pr->itv,itv_temp, r0_x, itv_temp); // itv_temp = -2 * δ_r * r0_x
-			itv_add(itv_temp1, itv_temp, r0_z);           // itv_temp = -2 * δ_r * r0_x - δ_a * r0_z
-			itv_set_int(itv_temp, 1);
-			itv_add(itv_temp, itv_temp, itv_temp1);        // itv_temp = -2 * δ_r * r0_x - δ_a * (r0_z + 1)
-	
-			num_t lower_bound, upper_bound;
-			num_init(lower_bound);
-			num_init(upper_bound);
-	
-			num_set(lower_bound, itv_temp->inf); // lower_bound = -2 * δ_r * r0_x - δ_a * (r0_z + 1)
-			num_set_int(upper_bound, 0);         // upper_bound = 0
-			itv_set_num2(result_interval1, lower_bound, upper_bound);
-	
-			new_noise1 = create_affine_form_with_interval(pr, result_interval1);
-	
-			// --- Compute Δ2 = [-(1 + δ_r)δ_r * r_0^y, 0] ---
-			itv_t r0_y;
-			itv_init(r0_y);
-			itv_set(r0_y, exprAB[1]->c); // r0_y = midpoint of r_y
-	
-			itv_set_int(itv_temp, 1);
-			itv_add(itv_temp, itv_temp, delta_r);         // itv_temp = 1 + δ_r
-			itv_mul(pr->itv, itv_temp, itv_temp, delta_r); // itv_temp = (1 + δ_r) * δ_r
-			itv_mul(pr->itv, itv_temp, itv_temp, r0_y);    // itv_temp = (1 + δ_r) * δ_r * r0_y
-	
-			num_set(lower_bound, itv_temp->inf); // lower_bound = -(1 + δ_r) * δ_r * r0_y
-			num_set_int(upper_bound, 0);         // upper_bound = 0
-			itv_set_num2(result_interval2, lower_bound, upper_bound);
-	
-			new_noise2 = create_affine_form_with_interval(pr, result_interval2);
-	
-			// --- Compute Δ3 = [-(1 + δ_r) * r_0^z - δ_a, δ_a] ---
-			itv_set_int(itv_temp, 1);
-			itv_add(itv_temp, itv_temp, delta_r);         // itv_temp = 1 + δ_r
-			itv_mul(pr->itv, itv_temp, itv_temp, r0_z);    // itv_temp = (1 + δ_r) * r0_z
-			itv_add(itv_temp, itv_temp, delta_a);         // itv_temp = (1 + δ_r) * r0_z + δ_a
-	
-			num_set(lower_bound, itv_temp->inf); // lower_bound = -(1 + δ_r) * r0_z - δ_a
-			num_set(upper_bound, delta_a->sup);  // upper_bound = δ_a
-			itv_set_num2(result_interval3, lower_bound, upper_bound);
-	
-			new_noise3 = create_affine_form_with_interval(pr, result_interval3);
-
-			// 初始化变量
-			itv_t term1, term2;
-			itv_init(term1);
-			itv_init(term2);
-
-			// 计算 term1 = 2 * δ_r * r_x
-			itv_set_int(itv_temp, 2); // itv_temp = 2
-			itv_mul(pr->itv, term1, delta_r, itv_temp); // term1 = 2 * δ_r
-			t1p_aff_t* aff_temp1 = t1p_aff_mul_itv(pr, exprAB[0], term1);
-
-			// 计算 term2 = δ_a * (r_x / r_y + 1)
-			// 计算 r_x / r_y + 1
-			itv_set_int(itv_temp, 1); // itv_temp = 1
-			t1p_aff_t* aff_temp2=t1p_aff_copy(pr, r_x_div_y);
-			itv_add(aff_temp2->c,r_x_div_y->c,itv_temp); // itv_temp = r_x / r_y + 1
-			// 计算 δ_a * (r_x / r_y + 1)
-			aff_temp2=t1p_aff_mul_itv(pr,aff_temp2,delta_a);
-
-			// 计算最终结果 result = term1 + term2
-			t1p_aff_add_aff(pr,aff_temp1,aff_temp1,aff_temp2);
-
-			t1p_aff_add_aff(pr, aff_temp1, aff_temp1, new_noise1);
-
-			//{@ 
-			// 计算 (1 + δ_r)
-			itv_set_int(itv_temp, 1); // itv_temp = 1
-			itv_add(itv_temp, itv_temp, delta_r); // itv_temp = 1 + δ_r
-
-			// 计算 (1 + δ_r) * δ_r
-			itv_mul(pr->itv, itv_temp, itv_temp, delta_r); // itv_temp = (1 + δ_r) * δ_r
-
-			// 计算 (1 + δ_r) * δ_r * r_y
-			aff_temp2=t1p_aff_mul_itv(pr,exprAB[1],itv_temp);
-
-			t1p_aff_add_aff(pr, aff_temp1, aff_temp2, new_noise2);
-
-			// @}
-
-			aff_temp1=t1p_aff_div(pr, aff_temp1, aff_temp2, env);
-
-			// {@
-			itv_set_int(itv_temp, 1); // itv_temp = 1
-			itv_add(itv_temp, itv_temp, delta_r); // itv_temp = 1 + δ_r
-			t1p_aff_t* aff_temp3 = t1p_aff_mul_itv(pr, r_x_div_y, itv_temp);
-			// @}
-
-			t1p_aff_add_aff(pr, aff_temp1, aff_temp1, aff_temp3);
-			t1p_aff_add_aff(pr, res, aff_temp1, new_noise3);
-
-			// 清理资源
-			itv_clear(itv_temp);
-			itv_clear(itv_temp1);
-			itv_clear(itv_delta_r_term);
-			itv_clear(itv_delta_a_term);
-			itv_clear(result_interval1);
-			itv_clear(result_interval2);
-			itv_clear(result_interval3);
-			itv_clear(r0_x);
-			itv_clear(r0_y);
-			itv_clear(r0_z);
-			t1p_aff_clear(pr, r_x_div_y);
-			t1p_aff_clear(pr, new_noise1);
-			t1p_aff_clear(pr, new_noise2);
-			t1p_aff_clear(pr, new_noise3);
-			num_clear(lower_bound);
-			num_clear(upper_bound);
-		}
 		break;
 	}
 	case AP_TEXPR_MOD:
@@ -1545,10 +1085,6 @@ t1p_aff_t* t1p_aff_eval_node_binary (t1p_internal_t* pr, ap_texpr0_node_t* node,
     fprintf(stdout, "### BINARY RESULT ###\n");
     t1p_aff_fprint(pr, stdout, res);
 #endif
-    // By zoush99 { @}
-    itv_clear(delta_r);
-    itv_clear(delta_a);
-    // @}
     return res;
 }
 

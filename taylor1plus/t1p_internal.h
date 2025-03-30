@@ -626,25 +626,6 @@ static inline void t1p_aff_nsym_create(t1p_internal_t *pr, t1p_aff_t *expr, itv_
     itv_clear(zero);
 }
 
-// By zoush99: create a new affine form with itv_t type, which is not a point
-static inline t1p_aff_t* create_affine_form_with_interval(t1p_internal_t* pr, itv_t interval) {
-    t1p_aff_t* new_affine_form = t1p_aff_alloc_init(pr);
-
-    itv_t mid, dev;
-    itv_init(mid);
-    itv_init(dev);
-    itv_middev(pr->itv, mid, dev, interval);
-
-    itv_set(new_affine_form->c, mid);
-
-    t1p_aff_nsym_create(pr, new_affine_form, dev, IN); // add a new noise symbol to the affine form
-
-    itv_clear(mid);
-    itv_clear(dev);
-
-    return new_affine_form;
-}
-
 /* add a new aaterm to the affine form with an already existing noise symbol (used to build by hand an affine form) */
 static inline void t1p_aff_build(t1p_internal_t *pr, t1p_aff_t* expr, itv_t coeff, uint_t index)
 {
